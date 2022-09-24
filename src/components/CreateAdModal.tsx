@@ -1,25 +1,57 @@
 import { Input } from "../components/Form/Input"
-import { Check, GameController } from 'phosphor-react'
+import axios from 'axios'
+import { Check, GameController, CaretDown } from 'phosphor-react'
 import * as Dialog from '@radix-ui/react-dialog'
 import * as Checkbox from '@radix-ui/react-checkbox'
 import * as ToggleGroup from '@radix-ui/react-toggle-group'
+import * as Select from '@radix-ui/react-select'
 
 import { SelectGame } from "./SelectGame"
-import { useState, FormEvent } from "react"
+import { useState, FormEvent, useEffect } from "react"
 
+interface Props {
+  id: string,
+  title: string
+}
 
 export function CreateAdModal() {
   const [weekDays, setWeekDays] = useState<string[]>([])
   const [useVoiceChannel, setUseVoiceChannel] = useState(false)
 
+  const [game, setGame] = useState('')
+  const [games, setGames] = useState<Props[]>([])
 
-  function handleCreateAd(event: FormEvent) {
+  console.log(game)
+  useEffect(() => {
+    axios('http://localhost:3333/games')
+      .then(response => {
+        setGames(response.data)
+      })
+  }, [])
+
+  async function handleCreateAd(event: FormEvent) {
     event.preventDefault()
 
     const formData = new FormData(event.target as HTMLFormElement)
     const data = Object.fromEntries(formData)
-    console.log(data)
+  
+    try {
+      await axios.post(`http://localhost:3333/games/${game}/ads`, {
+        name: data.name,
+        yearsPlaying: Number(data.yearsPlaying),
+        discord: data.discord,
+        weekDays: weekDays.map(Number),
+        hourStart: data.hourStart,
+        hourEnd: data.hourEnd,
+        useVoiceChannel: useVoiceChannel
+      })
+      alert('Anúncio criado com sucesso!')
+    } catch (err) {
+      console.log(err)
+      alert('Erro ao criar o anúncio!')
+    }
   }
+
 
   return(
     <Dialog.Portal>
@@ -32,7 +64,36 @@ export function CreateAdModal() {
           <form onSubmit={handleCreateAd} className="mt-8 flex flex-col gap-4">
             <div className="flex flex-col gap-2">
               <label htmlFor="game" className="font-semibold">Qual o game?</label>
-              <SelectGame />
+              <Select.Root value={game} name="game" onValueChange={(value: string) => setGame(value)}>
+                <Select.Trigger className="flex justify-between items-center bg-zinc-900 py-3 px-4 rounded text-sm" >
+                  <Select.Value placeholder="Selecione o game que deseja jogar..." />
+                  <Select.Icon>
+                    <CaretDown size={24} fontWeight="bold"/>
+                  </Select.Icon>
+                </Select.Trigger>
+
+                <Select.Portal>
+                  <Select.Content >
+                    <Select.Viewport className='bg-zinc-900 p-5 rounded overflow-hidden'>
+                      {
+                        games.map(game => {
+                          return(
+                            <Select.Item value={game.id} key={game.id} className="flex p-2 rounded gap-2 text-white text-sm mb-4 cursor-pointer hover:bg-zinc-700 ">
+                              <Select.ItemText>
+                                {game.title}
+                              </Select.ItemText>
+                              <Select.ItemIndicator>
+                                <Check className="w-4 h-4 text-violet-500 hover:text-white" />
+                              </Select.ItemIndicator>
+                            </Select.Item>
+                          )
+                        })
+                      }
+
+                    </Select.Viewport>
+                  </Select.Content>
+                </Select.Portal>
+              </Select.Root>
             </div>
 
             <div className="flex flex-col gap-2">

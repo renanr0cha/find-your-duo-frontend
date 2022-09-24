@@ -1,4 +1,5 @@
 import * as Select from '@radix-ui/react-select'
+import axios from 'axios'
 import { CaretDown, Check } from 'phosphor-react'
 import { useEffect, useState } from 'react'
 
@@ -8,20 +9,19 @@ interface Props {
   title: string
 }
 
-export function SelectGame() {
+export function SelectGame(...rest: any[]) {
 
   const [games, setGames] = useState<Props[]>([])
 
   useEffect(() => {
-    fetch('http://localhost:3333/games')
-      .then(response => response.json())
-      .then(data => {
-        setGames(data)
+    axios('http://localhost:3333/games')
+      .then(response => {
+        setGames(response.data)
       })
   }, [])
 
   return(
-    <Select.Root>
+    <Select.Root {...rest}>
     <Select.Trigger className="flex justify-between items-center bg-zinc-900 py-3 px-4 rounded text-sm" >
       <Select.Value placeholder="Selecione o game que deseja jogar..." />
       <Select.Icon>
